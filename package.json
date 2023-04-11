@@ -25,6 +25,7 @@
     "html2pdf"
   ],
   "dependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.2",
     "html2pdf.js": "^0.10.1"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     "cross-env": "^7.0.3",
     "minimist": "^1.2.8",
     "rollup": "^3.20.2",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-scss": "^4.0.0",
     "rollup-plugin-vue": "^6.0.0",
     "sass": "^1.61.0",

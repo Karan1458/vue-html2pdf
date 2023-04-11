@@ -1,13 +1,14 @@
 // rollup.config.js
 import path from 'path';
-import vue from 'rollup-plugin-vue';
+
+import minimist from 'minimist';
+import scss from 'rollup-plugin-scss';   
+import vuePlugin from 'rollup-plugin-vue';
 import alias from '@rollup/plugin-alias';
 import buble from '@rollup/plugin-buble';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
-import minimist from 'minimist';
-import scss from 'rollup-plugin-scss';   
 
 const argv = minimist(process.argv.slice(2));
 
@@ -74,7 +75,7 @@ if (!argv.format || argv.format === 'es') {
     },
     plugins: [
       ...baseConfig.plugins.preVue,
-      vue(baseConfig.plugins.vue),
+      vuePlugin(baseConfig.plugins.vue),
       ...baseConfig.plugins.postVue,
     ],
   };
@@ -95,7 +96,7 @@ if (!argv.format || argv.format === 'cjs') {
     },
     plugins: [
       ...baseConfig.plugins.preVue,
-      vue({
+      vuePlugin({
         ...baseConfig.plugins.vue,
         template: {
           ...baseConfig.plugins.vue.template,
@@ -122,7 +123,7 @@ if (!argv.format || argv.format === 'iife') {
     },
     plugins: [
       ...baseConfig.plugins.preVue,
-      vue(baseConfig.plugins.vue),
+      vuePlugin(baseConfig.plugins.vue),
       ...baseConfig.plugins.postVue,
       terser({
         output: {
