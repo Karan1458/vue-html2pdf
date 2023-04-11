@@ -7,6 +7,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import minimist from 'minimist';
+import scss from 'rollup-plugin-scss';   
 
 const argv = minimist(process.argv.slice(2));
 
@@ -20,21 +21,22 @@ const baseConfig = {
         'process.env.NODE_ENV': JSON.stringify('production'),
         preventAssignment: false
       }),
-      commonjs(),
       alias({
         resolve: ['.jsx', '.js', '.vue'],
         entries: {
           '@': path.resolve(projectRoot, 'src'),
         },
       }),
+      scss()
     ],
     vue: {
       css: true,
       template: {
         isProduction: true,
-      },
+      }
     },
     postVue: [
+      commonjs(),
       buble({
         transforms: {
           asyncAwait: false,

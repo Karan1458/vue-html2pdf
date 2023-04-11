@@ -1,6 +1,5 @@
 import html2pdf from 'html2pdf.js';
-
-//
+import { openBlock, createElementBlock, createElementVNode, normalizeClass, normalizeStyle, renderSlot, createVNode, Transition, withCtx, withModifiers, createCommentVNode } from 'vue';
 
 var script = {
 	props: {
@@ -256,174 +255,51 @@ var script = {
 	}
 };
 
-function normalizeComponent(template, style, script, scopeId, isFunctionalTemplate, moduleIdentifier /* server only */, shadowMode, createInjector, createInjectorSSR, createInjectorShadow) {
-    if (typeof shadowMode !== 'boolean') {
-        createInjectorSSR = createInjector;
-        createInjector = shadowMode;
-        shadowMode = false;
-    }
-    // Vue.extend constructor export interop.
-    var options = typeof script === 'function' ? script.options : script;
-    // render functions
-    if (template && template.render) {
-        options.render = template.render;
-        options.staticRenderFns = template.staticRenderFns;
-        options._compiled = true;
-        // functional template
-        if (isFunctionalTemplate) {
-            options.functional = true;
-        }
-    }
-    // scopedId
-    if (scopeId) {
-        options._scopeId = scopeId;
-    }
-    var hook;
-    if (moduleIdentifier) {
-        // server build
-        hook = function (context) {
-            // 2.3 injection
-            context =
-                context || // cached call
-                    (this.$vnode && this.$vnode.ssrContext) || // stateful
-                    (this.parent && this.parent.$vnode && this.parent.$vnode.ssrContext); // functional
-            // 2.2 with runInNewContext: true
-            if (!context && typeof __VUE_SSR_CONTEXT__ !== 'undefined') {
-                context = __VUE_SSR_CONTEXT__;
-            }
-            // inject component styles
-            if (style) {
-                style.call(this, createInjectorSSR(context));
-            }
-            // register component module identifier for async chunk inference
-            if (context && context._registeredComponents) {
-                context._registeredComponents.add(moduleIdentifier);
-            }
-        };
-        // used by ssr in case component is cached and beforeCreate
-        // never gets called
-        options._ssrRegister = hook;
-    }
-    else if (style) {
-        hook = shadowMode
-            ? function (context) {
-                style.call(this, createInjectorShadow(context, this.$root.$options.shadowRoot));
-            }
-            : function (context) {
-                style.call(this, createInjector(context));
-            };
-    }
-    if (hook) {
-        if (options.functional) {
-            // register for functional component in vue file
-            var originalRender = options.render;
-            options.render = function renderWithStyleInjection(h, context) {
-                hook.call(context);
-                return originalRender(h, context);
-            };
-        }
-        else {
-            // inject component registration as beforeCreate hook
-            var existing = options.beforeCreate;
-            options.beforeCreate = existing ? [].concat(existing, hook) : [hook];
-        }
-    }
-    return script;
+var _hoisted_1 = { class: "vue-html2pdf" };
+var _hoisted_2 = {
+  key: 0,
+  class: "pdf-preview"
+};
+var _hoisted_3 = ["src"];
+
+function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (openBlock(), createElementBlock("div", _hoisted_1, [
+    createElementVNode("section", {
+      class: normalizeClass(["layout-container", {
+				'show-layout' : $props.showLayout,
+				'unset-all' : !$props.floatLayout
+			}])
+    }, [
+      createElementVNode("section", {
+        class: "content-wrapper",
+        style: normalizeStyle(("width: " + ($props.pdfContentWidth) + ";")),
+        ref: "pdfContent"
+      }, [
+        renderSlot(_ctx.$slots, "pdf-content")
+      ], 4)
+    ], 2),
+    createVNode(Transition, { name: "transition-anim" }, {
+      default: withCtx(function () { return [
+        ($data.pdfFile)
+          ? (openBlock(), createElementBlock("section", _hoisted_2, [
+              createElementVNode("button", {
+                onClick: _cache[0] || (_cache[0] = withModifiers(function ($event) { return ($options.closePreview()); }, ["self"]))
+              }, " × "),
+              createElementVNode("iframe", {
+                src: $data.pdfFile,
+                width: "100%",
+                height: "100%"
+              }, null, 8, _hoisted_3)
+            ]))
+          : createCommentVNode("", true)
+      ]; }),
+      _: 1
+    })
+  ]))
 }
 
-var isOldIE = typeof navigator !== 'undefined' &&
-    /msie [6-9]\\b/.test(navigator.userAgent.toLowerCase());
-function createInjector(context) {
-    return function (id, style) { return addStyle(id, style); };
-}
-var HEAD;
-var styles = {};
-function addStyle(id, css) {
-    var group = isOldIE ? css.media || 'default' : id;
-    var style = styles[group] || (styles[group] = { ids: new Set(), styles: [] });
-    if (!style.ids.has(id)) {
-        style.ids.add(id);
-        var code = css.source;
-        if (css.map) {
-            // https://developer.chrome.com/devtools/docs/javascript-debugging
-            // this makes source maps inside style tags work properly in Chrome
-            code += '\n/*# sourceURL=' + css.map.sources[0] + ' */';
-            // http://stackoverflow.com/a/26603875
-            code +=
-                '\n/*# sourceMappingURL=data:application/json;base64,' +
-                    btoa(unescape(encodeURIComponent(JSON.stringify(css.map)))) +
-                    ' */';
-        }
-        if (!style.element) {
-            style.element = document.createElement('style');
-            style.element.type = 'text/css';
-            if (css.media)
-                { style.element.setAttribute('media', css.media); }
-            if (HEAD === undefined) {
-                HEAD = document.head || document.getElementsByTagName('head')[0];
-            }
-            HEAD.appendChild(style.element);
-        }
-        if ('styleSheet' in style.element) {
-            style.styles.push(code);
-            style.element.styleSheet.cssText = style.styles
-                .filter(Boolean)
-                .join('\n');
-        }
-        else {
-            var index = style.ids.size - 1;
-            var textNode = document.createTextNode(code);
-            var nodes = style.element.childNodes;
-            if (nodes[index])
-                { style.element.removeChild(nodes[index]); }
-            if (nodes.length)
-                { style.element.insertBefore(textNode, nodes[index]); }
-            else
-                { style.element.appendChild(textNode); }
-        }
-    }
-}
-
-/* script */
-var __vue_script__ = script;
-
-/* template */
-var __vue_render__ = function () {var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"vue-html2pdf"},[_c('section',{staticClass:"layout-container",class:{
-				'show-layout' : _vm.showLayout,
-				'unset-all' : !_vm.floatLayout
-			}},[_c('section',{ref:"pdfContent",staticClass:"content-wrapper",style:(("width: " + _vm.pdfContentWidth + ";"))},[_vm._t("pdf-content")],2)]),_vm._v(" "),_c('transition',{attrs:{"name":"transition-anim"}},[(_vm.pdfFile)?_c('section',{staticClass:"pdf-preview"},[_c('button',{on:{"click":function($event){if($event.target !== $event.currentTarget){ return null; }return _vm.closePreview()}}},[_vm._v("\n\t\t\t\t\t×\n\t\t\t\t")]),_vm._v(" "),_c('iframe',{attrs:{"src":_vm.pdfFile,"width":"100%","height":"100%"}})]):_vm._e()])],1)};
-var __vue_staticRenderFns__ = [];
-
-  /* style */
-  var __vue_inject_styles__ = function (inject) {
-    if (!inject) { return }
-    inject("data-v-1fd3ad26_0", { source: ".vue-html2pdf .layout-container[data-v-1fd3ad26]{position:fixed;width:100vw;height:100vh;left:-100vw;top:0;z-index:-9999;background:rgba(95,95,95,.8);display:flex;justify-content:center;align-items:flex-start;overflow:auto}.vue-html2pdf .layout-container.show-layout[data-v-1fd3ad26]{left:0;z-index:9999}.vue-html2pdf .layout-container.unset-all[data-v-1fd3ad26]{all:unset;width:auto;height:auto}.vue-html2pdf .pdf-preview[data-v-1fd3ad26]{position:fixed;width:65%;min-width:600px;height:80vh;top:100px;z-index:9999999;left:50%;transform:translateX(-50%);border-radius:5px;box-shadow:0 0 10px #00000048}.vue-html2pdf .pdf-preview button[data-v-1fd3ad26]{position:absolute;top:-20px;left:-15px;width:35px;height:35px;background:#555;border:0;box-shadow:0 0 10px #00000048;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer}.vue-html2pdf .pdf-preview iframe[data-v-1fd3ad26]{border:0}.vue-html2pdf .transition-anim-enter-active[data-v-1fd3ad26],.vue-html2pdf .transition-anim-leave-active[data-v-1fd3ad26]{transition:opacity .3s ease-in}.vue-html2pdf .transition-anim-enter[data-v-1fd3ad26],.vue-html2pdf .transition-anim-leave-to[data-v-1fd3ad26]{opacity:0}", map: undefined, media: undefined });
-
-  };
-  /* scoped */
-  var __vue_scope_id__ = "data-v-1fd3ad26";
-  /* module identifier */
-  var __vue_module_identifier__ = undefined;
-  /* functional template */
-  var __vue_is_functional_template__ = false;
-  /* style inject SSR */
-  
-  /* style inject shadow dom */
-  
-
-  
-  var __vue_component__ = /*#__PURE__*/normalizeComponent(
-    { render: __vue_render__, staticRenderFns: __vue_staticRenderFns__ },
-    __vue_inject_styles__,
-    __vue_script__,
-    __vue_scope_id__,
-    __vue_is_functional_template__,
-    __vue_module_identifier__,
-    false,
-    createInjector,
-    undefined,
-    undefined
-  );
+script.render = render;
+script.__scopeId = "data-v-1c45649c";
 
 // Import vue component
 
@@ -431,7 +307,7 @@ var __vue_staticRenderFns__ = [];
 function install(Vue) {
   if (install.installed) { return; }
   install.installed = true;
-  Vue.component('VueHtml2pdf', __vue_component__);
+  Vue.component('VueHtml2pdf', script);
 }
 
 // Create module definition for Vue.use()
@@ -453,10 +329,10 @@ if (GlobalVue) {
 
 // Inject install function into component - allows component
 // to be registered via Vue.use() as well as Vue.component()
-__vue_component__.install = install;
+script.install = install;
 
 // It's possible to expose named exports when writing components that can
 // also be used as directives, etc. - eg. import { RollupDemoDirective } from 'rollup-demo';
 // export const RollupDemoDirective = component;
 
-export default __vue_component__;
+export { script as default };
